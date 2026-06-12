@@ -1,0 +1,173 @@
+---
+name: municipio-status
+description: >
+  Painel de status dos 78 municípios do Projeto Candela — mandato Evair de Melo. Use esta skill SEMPRE que o usuário mencionar status de município, atualizar o painel, querer saber quantos municípios foram concluídos, ou usar frases como "fecha [município]", "[município] voltou com ajustes", "qual o status de [município]", "resumo do Candela", "atualiza o painel" ou qualquer variação. A skill lê e atualiza a planilha Google Sheets automaticamente, registra o histórico e mantém o painel e o mapa sincronizados.
+---
+
+# Municipio Status — Painel Candela
+
+Você gerencia o painel de status dos 78 municípios do Projeto Candela.
+A fonte da verdade é uma planilha Google Sheets nativa (não .xlsx).
+Sempre leia o estado atual antes de qualquer atualização — nunca assuma o que está lá.
+
+---
+
+## Localização
+
+- **Google Sheets ID:** `1lhWnWRdM24sbBTDSbjhMgFqTlSnHS_WYIWnpjvL-GHk`
+- **Link direto:** https://docs.google.com/spreadsheets/d/1lhWnWRdM24sbBTDSbjhMgFqTlSnHS_WYIWnpjvL-GHk
+- **Mapa visual (GitHub Pages):** https://evaircomunicacao.github.io/painel-candela/
+- **Repositório:** https://github.com/EvairComunicacao/painel-candela
+
+---
+
+## Estrutura da planilha
+
+### Aba "Sheet1" — colunas:
+| Col | Campo |
+|-----|-------|
+| A | # (número) |
+| B | Município |
+| C | Status Texto |
+| D | Versão Texto |
+| E | Status Layout |
+| F | Versão Layout |
+| G | Última Atualização |
+| H | Próxima Ação |
+| I | Responsável |
+| J | Observação |
+
+---
+
+## Fluxo de status — 8 etapas, dois trilhos independentes
+
+Cada município tem **dois trilhos separados**: Texto e Layout.
+Cada trilho avança de forma independente pelas etapas abaixo.
+
+| Etapa | Status | Significado |
+|-------|--------|-------------|
+| 1 | `Briefing enviado` | Briefing entregue à Candela — aguardando produção do texto |
+| 1 | `Briefing em andamento` | Briefing sendo preparado com equipe de campo |
+| 2 | `Texto recebido` | Candela enviou o texto — análise pendente |
+| 2 | `Texto em revisão` | Análise interna do texto em andamento |
+| 3 | `Feedback texto enviado` | Feedback oficial de texto enviado à Candela |
+| 4 | `Layout recebido` | Candela enviou o layout — análise pendente |
+| 4 | `Layout em revisão` | Análise interna do layout em andamento |
+| 5 | `Feedback layout enviado` | Feedback de layout enviado (pode repetir — registrar versão) |
+| 6 | `Material aprovado` | Deputado aprovou — material finalizado |
+
+**Célula em branco** = município não iniciado naquele trilho.
+
+---
+
+## Convenção de nomes de documentos
+
+Sempre usar este padrão daqui em diante:
+
+```
+Analise_Interna_Texto_[Município]_v[N].docx
+Analise_Interna_Layout_[Município]_v[N].docx
+Feedback_Candela_Texto_[Município]_v[N].docx
+Feedback_Candela_Layout_[Município]_v[N].docx
+```
+
+---
+
+## Comandos reconhecidos
+
+### Avançar etapa de texto
+**Gatilhos:** "texto de X recebido", "X enviou o texto", "estou revisando o texto de X", "feedback de texto de X enviado", "aprovei o texto de X"
+
+### Avançar etapa de layout
+**Gatilhos:** "layout de X chegou", "revisando o layout de X", "feedback de layout de X enviado v[N]", "material de X aprovado"
+
+### Consultas (sem alterar nada)
+**Gatilhos:** "qual o status de X", "como está X", "quantos fechamos", "resumo do Candela", "overview"
+
+---
+
+## Fluxo para ATUALIZAR
+
+1. **Leia a planilha** via Google Drive (`read_file_content` com o Sheets ID)
+2. **Identifique a linha** do município (coluna B)
+3. **Atualize via Google Drive** — edite diretamente o Sheets com `create_file` de CSV ou use a API do Drive para editar células
+4. **Registre no chat** o que mudou (município, trilho, status anterior → novo, versão)
+5. **Confirme** para o usuário
+
+### Referência de atualização via CSV (método mais confiável)
+
+Para atualizar o Sheets, gere um novo CSV com todos os dados e faça upload sobrescrevendo o arquivo:
+
+```python
+import csv, io
+
+# Montar novo conteúdo com a linha atualizada
+# Upload via Google Drive create_file com contentMimeType text/csv
+# O Drive converte automaticamente para Sheets
+```
+
+**Importante:** O Sheets aceita upload de CSV e converte automaticamente.
+Nunca use openpyxl para este arquivo — ele é um Google Sheets nativo.
+
+---
+
+## Fluxo para CONSULTAR
+
+1. Leia a planilha via Google Drive (`read_file_content`)
+2. Filtre os municípios com status preenchido
+3. Responda diretamente no chat — não modifica nada
+
+### Exemplo de resposta esperada
+
+**"Qual o status de Afonso Cláudio?"**
+> Afonso Cláudio:
+> - Texto: **Feedback texto enviado** (v6)
+> - Layout: **Layout em revisão**
+> Última atualização: 12/06/2026
+
+**"Resumo do Candela"**
+> Mostre tabela com os municípios não-em-branco, separados por etapa, com totais.
+
+---
+
+## Estado atual dos municípios (referência — verificar planilha antes de atualizar)
+
+| Município | Status Texto | v | Status Layout | v |
+|-----------|-------------|---|--------------|---|
+| Castelo | Material aprovado | — | Material aprovado | — |
+| Afonso Cláudio | Feedback texto enviado | v6 | Layout em revisão | — |
+| Santa Maria de Jetibá | Texto em revisão | v1 | — | — |
+| Mimoso do Sul | — | — | Feedback layout enviado | v1 |
+| Iúna | Briefing em andamento | — | — | — |
+| Irupi | Briefing em andamento | — | — | — |
+| Ibatiba | Briefing em andamento | — | — | — |
+| Alegre | Briefing em andamento | — | — | — |
+| Demais 70 | — | — | — | — |
+
+---
+
+## Regras importantes
+
+- **Nunca edite sem confirmar** quando o comando for ambíguo
+- **Sempre registre no chat** o que mudou — é a rastreabilidade
+- **Versão é obrigatória** para Feedback layout enviado (v1, v2, etc.)
+- Para múltiplos municípios, processe todos de uma vez
+- Se o município não existir na lista dos 78, informe o usuário
+
+---
+
+## Lista dos 78 municípios (validação)
+
+Afonso Cláudio, Água Doce do Norte, Águia Branca, Alegre, Alfredo Chaves, Alto Rio Novo,
+Anchieta, Apiacá, Aracruz, Atílio Vivácqua, Baixo Guandu, Barra de São Francisco,
+Boa Esperança, Bom Jesus do Norte, Brejetuba, Cachoeiro de Itapemirim, Cariacica, Castelo,
+Colatina, Conceição da Barra, Conceição do Castelo, Divino de São Lourenço, Domingos Martins,
+Dores do Rio Preto, Ecoporanga, Fundão, Governador Lindenberg, Guaçuí, Guarapari, Ibatiba,
+Ibiraçu, Ibitirama, Iconha, Irupi, Itaguaçu, Itapemirim, Itarana, Iúna, Jaguaré,
+Jerônimo Monteiro, João Neiva, Laranja da Terra, Linhares, Mantenópolis, Marataízes,
+Marechal Floriano, Marilândia, Mimoso do Sul, Montanha, Mucurici, Muniz Freire, Muqui,
+Nova Venécia, Novo Horizonte, Pancas, Pedro Canário, Pinheiros, Piúma, Ponto Belo,
+Presidente Kennedy, Rio Bananal, Rio Novo do Sul, Santa Leopoldina, Santa Maria de Jetibá,
+Santa Teresa, São Domingos do Norte, São Gabriel da Palha, São José do Calçado, São Mateus,
+S�o Roque do Canaã, Serra, Sooretama, Vargem Alta, Venda Nova do Imigrante, Viana,
+Vila Pavão, Vila Valério, Vila Velha
